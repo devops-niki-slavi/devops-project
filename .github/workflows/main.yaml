@@ -1,1 +1,85 @@
-
+name: Main workflow
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+jobs:
+  Build:
+    runs-on: ubuntu-latest
+    container:
+      image: node:latest
+    steps:
+      - name: Clone down repository
+        uses: actions/checkout@v4
+      - name: Install dependencies
+        run: npm install
+      - name: Run unit tests
+        run: npm test
+      - name: Upload repo
+        uses: actions/upload-artifact@v4
+        with:
+          name: code
+          path: .
+  Linting:
+    runs-on: ubuntu-latest
+    needs: [Build]
+    steps:
+      - name: Download Artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: code
+          path: .
+      - name: Run linting
+        uses: super-linter/super-linter/slim@v5
+        env:
+          DEFAULT_BRANCH: main
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          DISABLE_ERRORS: true
+  Sonar_Cloud:
+    runs-on: ubuntu-latest
+    needs: [Linting]
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: sonarCloudAction
+        uses: sonarsource/sonarcloud-github-action@master
+    env:
+          DEFAULT_BRANCH: main
+          SONAR_TOKEN: ${{ secrets.SONAR_CLOUD }}
+          DISABLE_ERRORS: true
+  Snyk:
+    runs-on: ubuntu-latest
+    needs: [Linting]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - run: npm install
+      - run: npm install -g snyk
+      - run: snyk test
+    env:
+          DEFAULT_BRANCH: main
+          SNYK_TOKEN: ${{ secrets.SNYK }}
+          DISABLE_ERRORS: true
+  Trivy:
+    runs-on: ubuntu-latest
+    needs: [Linting]
+    steps:
+      - uses: actions/checkout@v3
+      - run: npm install
+      - name: Build Docker image
+        run: docker build -t "devopstrivy-image" .
+      - name: Run Trivy
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: 'devopstrivy-image'
+          format: 'table'
+          exit-code: 1
+          ignore-unfixed: true
+          severity: 'CRITICAL, HIGH'
+    
