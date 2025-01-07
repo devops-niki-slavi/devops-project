@@ -46,6 +46,7 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - run: npm install -g snyk
       - run: snyk test
     env:
           DEFAULT_BRANCH: main
