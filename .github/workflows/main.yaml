@@ -38,19 +38,6 @@ jobs:
           DEFAULT_BRANCH: main
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           DISABLE_ERRORS: true
-  Sonar_Cloud:
-    runs-on: ubuntu-latest
-    needs: [Linting]
-    steps:
-      - uses: actions/checkout@v3
-        with:
-          fetch-depth: 0
-      - name: sonarCloudAction
-        uses: sonarsource/sonarcloud-github-action@master
-    env:
-          DEFAULT_BRANCH: main
-          SONAR_TOKEN: ${{ secrets.SONAR_CLOUD }}
-          DISABLE_ERRORS: true
   Snyk:
     runs-on: ubuntu-latest
     needs: [Linting]
@@ -59,27 +46,42 @@ jobs:
         uses: actions/checkout@v3
         with:
           fetch-depth: 0
-      - run: npm install
       - run: npm install -g snyk
       - run: snyk test
     env:
           DEFAULT_BRANCH: main
           SNYK_TOKEN: ${{ secrets.SNYK }}
           DISABLE_ERRORS: true
-  Trivy:
+          
+  Build-docker-image:
+    name: Build and Push Docker Image
+    needs: [Snyk]
     runs-on: ubuntu-latest
-    needs: [Linting]
     steps:
       - uses: actions/checkout@v3
-      - run: npm install
-      - name: Build Docker image
-        run: docker build -t "devopstrivy-image" .
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      - name: Log in to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      - name: Build Docker Image
+        run: docker build -t slavitriples01/devops-project:latest .
+      - name: Push Docker Image
+        run: docker push slavitriples01/devops-project:latest
+
+  Trivy:
+    runs-on: ubuntu-latest
+    needs: [Build-docker-image]
+    steps:
+      - uses: actions/checkout@v3
       - name: Run Trivy
         uses: aquasecurity/trivy-action@master
         with:
-          image-ref: 'devopstrivy-image'
+          image-ref: slavitriples01/devops-project:latest 
           format: 'table'
           exit-code: 1
           ignore-unfixed: true
-          severity: 'CRITICAL, HIGH'
+          severity: 'CRITICAL,HIGH'
     
