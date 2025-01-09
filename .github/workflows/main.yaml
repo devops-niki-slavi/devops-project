@@ -98,16 +98,11 @@ jobs:
   DeployToMiniKube:
     runs-on: ubuntu-latest
     needs: [Build-docker-image,Trivy]
-    name: DeployToMiniKube
     steps:
-      - uses: actions/checkout@v4    
+      - uses: actions/checkout@v3    
       
       - name: Start Minikube
-        uses: medyagh/setup-minikube@latest
-        with:
-          minikube-version: v1.34.0
-          kubernetes-version: v1.31.0
-          driver: docker  
+        uses: medyagh/setup-minikube@master
 
       - name: Deploy to Minikube
         run: |
