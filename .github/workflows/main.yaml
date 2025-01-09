@@ -95,7 +95,8 @@ jobs:
           ignore-unfixed: true
           severity: 'CRITICAL,HIGH'
           
-  DeployToMiniKube:
+  Deployment:
+    name: Deploy To MiniKube
     runs-on: ubuntu-latest
     needs: [Build-docker-image,Trivy]
     steps:
@@ -106,8 +107,8 @@ jobs:
 
       - name: Deploy to Minikube
         run: |
-          kubectl apply -f k8s/deployment.yaml
-          kubectl apply -f k8s/service.yaml
+          kubectl apply -f k8s/deployment.yml
+          kubectl apply -f k8s/service.yml
 
       - name: Wait for Pods to be Ready
         run: |
