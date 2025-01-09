@@ -106,7 +106,7 @@ jobs:
         uses: medyagh/setup-minikube@latest
         with:
           minikube-version: v1.34.0
-          kubernetes-version: v1.24.0 
+          kubernetes-version: v1.31.0
           driver: docker  
 
       - name: Deploy to Minikube
